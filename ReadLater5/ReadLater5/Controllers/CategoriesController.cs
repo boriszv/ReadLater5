@@ -1,25 +1,31 @@
 ﻿using Entity;
+using Entity.Search;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Services;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Threading.Tasks;
 
 namespace ReadLater5.Controllers
 {
-    public class CategoriesController : Controller
+    [Authorize]
+    public class CategoriesController : BaseController
     {
         ICategoryService _categoryService;
+
         public CategoriesController(ICategoryService categoryService)
         {
             _categoryService = categoryService;
         }
+
         // GET: Categories
         public IActionResult Index()
         {
-            List<Category> model = _categoryService.GetCategories();
+            CategorySearch search = new()
+            {
+                UserID = UserID,
+            };
+
+            List<Category> model = _categoryService.GetCategories(search);
             return View(model);
         }
 
@@ -31,12 +37,16 @@ namespace ReadLater5.Controllers
                 return new StatusCodeResult(Microsoft.AspNetCore.Http.StatusCodes.Status400BadRequest);
             }
             Category category = _categoryService.GetCategory((int)id);
+            if (category.UserID != UserID)
+            {
+                return new StatusCodeResult(Microsoft.AspNetCore.Http.StatusCodes.Status403Forbidden);
+            }
+
             if (category == null)
             {
                 return new StatusCodeResult(Microsoft.AspNetCore.Http.StatusCodes.Status404NotFound);
             }
             return View(category);
-
         }
 
         // GET: Categories/Create
@@ -54,6 +64,8 @@ namespace ReadLater5.Controllers
         {
             if (ModelState.IsValid)
             {
+                category.UserID = UserID;
+
                 _categoryService.CreateCategory(category);
                 return RedirectToAction("Index");
             }
@@ -69,6 +81,11 @@ namespace ReadLater5.Controllers
                 return new StatusCodeResult(Microsoft.AspNetCore.Http.StatusCodes.Status400BadRequest);
             }
             Category category = _categoryService.GetCategory((int)id);
+            if (category.UserID != UserID)
+            {
+                return new StatusCodeResult(Microsoft.AspNetCore.Http.StatusCodes.Status403Forbidden);
+            }
+
             if (category == null)
             {
                 return new StatusCodeResult(Microsoft.AspNetCore.Http.StatusCodes.Status404NotFound);
@@ -99,6 +116,11 @@ namespace ReadLater5.Controllers
                 return new StatusCodeResult(Microsoft.AspNetCore.Http.StatusCodes.Status400BadRequest);
             }
             Category category = _categoryService.GetCategory((int)id);
+            if (category.UserID != UserID)
+            {
+                return new StatusCodeResult(Microsoft.AspNetCore.Http.StatusCodes.Status403Forbidden);
+            }
+
             if (category == null)
             {
                 return new StatusCodeResult(Microsoft.AspNetCore.Http.StatusCodes.Status404NotFound);
@@ -112,6 +134,11 @@ namespace ReadLater5.Controllers
         public IActionResult DeleteConfirmed(int id)
         {
             Category category = _categoryService.GetCategory(id);
+            if (category.UserID != UserID)
+            {
+                return new StatusCodeResult(Microsoft.AspNetCore.Http.StatusCodes.Status403Forbidden);
+            }
+
             _categoryService.DeleteCategory(category);
             return RedirectToAction("Index");
         }

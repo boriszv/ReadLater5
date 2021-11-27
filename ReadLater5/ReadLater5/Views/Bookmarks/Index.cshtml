@@ -1,4 +1,4 @@
-﻿@model IEnumerable<Entity.Category>
+﻿@model IEnumerable<Entity.Bookmark>
 
 @{
     ViewBag.Title = "Index";
@@ -12,7 +12,7 @@
 <table class="table">
     <tr>
         <th>
-            @Html.DisplayNameFor(model => model.Name)
+            @Html.DisplayNameFor(model => model.URL)
         </th>
         <th></th>
     </tr>
@@ -21,12 +21,11 @@
     {
         <tr>
             <td>
-                @Html.DisplayFor(modelItem => item.Name)
+                @Html.DisplayFor(modelItem => item.URL)
             </td>
             <td>
                 @Html.ActionLink("Edit", "Edit", new { id = item.ID }) |
                 @Html.ActionLink("Details", "Details", new { id = item.ID }) |
-                <a asp-controller="Bookmarks" asp-action="Index" asp-route-categoryId="@item.ID">Bookmarks</a> |
                 @Html.ActionLink("Delete", "Delete", new { id = item.ID })
             </td>
         </tr>

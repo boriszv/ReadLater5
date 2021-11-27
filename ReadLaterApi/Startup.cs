@@ -1,18 +1,26 @@
 using Data;
+using IdentityServer4.AccessTokenValidation;
+using IdentityServer4.Models;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Services;
-using System.Reflection;
-using NSwag;
-using NSwag.Generation.Processors.Security;
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Threading.Tasks;
 
-namespace ReadLater5
+namespace ReadLaterApi
 {
     public class Startup
     {
@@ -29,42 +37,54 @@ namespace ReadLater5
             services.AddDbContext<ReadLaterDataContext>(options =>
                options.UseSqlServer(
                    Configuration.GetConnectionString("DefaultConnection")));
-            services.AddDatabaseDeveloperPageExceptionFilter();
 
             services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddEntityFrameworkStores<ReadLaterDataContext>();
+
+            services.AddIdentityServer()
+                .AddApiAuthorization<IdentityUser, ReadLaterDataContext>(options =>
+                {
+                    options.Clients.Add(new Client
+                    {
+                        ClientId = "spa-client",
+                        RequireClientSecret = false,
+                        AllowedGrantTypes = GrantTypes.ResourceOwnerPassword,
+                        AllowOfflineAccess = true,
+                        AllowedScopes = new List<string> { "read-later-api", "openid", "profile", "offline_access" },
+                    });
+
+                    //options.Clients.AddSPA("spa-client", spa =>
+                    //{
+                    //    spa.WithRedirectUri("http://www.example.com/authentication/login-callback")
+                    //       .WithLogoutRedirectUri("http://www.example.com/authentication/logout-callback");
+                    //});
+
+                    options.ApiResources.AddApiResource("read-later-api", resource =>
+                        resource.WithScopes("read-later-api"));
+                });
+
+            services.AddAuthentication()
+                .AddIdentityServerJwt();
 
             services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<IBookmarkService, BookmarkService>();
 
             services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
-            services.AddControllersWithViews();
+            services.AddAuthorization(x => x.DefaultPolicy = new AuthorizationPolicyBuilder()
+                .RequireAuthenticatedUser()
+                .Build());
 
-
-            services.AddSwaggerDocument(configure =>
-            {
-                configure.Title = "API";
-                configure.AddSecurity("oauth2", Enumerable.Empty<string>(), new OpenApiSecurityScheme
+            services.AddAuthentication(IdentityServerAuthenticationDefaults.AuthenticationScheme)
+                .AddIdentityServerAuthentication(options =>
                 {
-                    Type = OpenApiSecuritySchemeType.OAuth2,
-                    Name = "Authorization",
-
-                    In = OpenApiSecurityApiKeyLocation.Header,
-                    Flows = new OpenApiOAuthFlows
-                    {
-                        Password = new OpenApiOAuthFlow
-                        {
-                            TokenUrl = "/v1/auth",
-                            //Extensions = new Dictionary<string, IOpenApiExtension>
-                            //{
-                            //    { "returnSecureToken", new OpenApiBoolean(true) },
-                            //},
-                        },
-
-                    }
+                    options.Authority = "https://localhost:5002";
+                    options.RequireHttpsMetadata = false;
+                    options.ApiName = "read-later-api";
                 });
-            });
+
+            services.AddControllers()
+                .AddNewtonsoftJson();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -73,26 +93,19 @@ namespace ReadLater5
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-                app.UseMigrationsEndPoint();
             }
             else
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-            
-            app.UseOpenApi();
-            app.UseSwaggerUi3(settings =>
-            {
-                settings.Path = "/docs";
-            });
 
             app.UseRouting();
 
             app.UseAuthentication();
+            app.UseIdentityServer();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>

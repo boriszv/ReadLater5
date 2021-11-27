@@ -1,19 +1,19 @@
 ﻿using Entity;
-using System;
+using Entity.Search;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Services
 {
     public interface ICategoryService
     {
         Category CreateCategory(Category category);
-        List<Category> GetCategories();
+        List<Category> GetCategories(CategorySearch search);
         Category GetCategory(int Id);
         Category GetCategory(string Name);
         void UpdateCategory(Category category);
         void DeleteCategory(Category category);
+        List<TDto> GetCategoryDtos<TDto>(CategorySearch search);
+        TDto GetCategoryDto<TDto>(int id);
+        bool CategoryExists(int categoryid);
     }
 }

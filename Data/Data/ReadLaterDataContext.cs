@@ -1,19 +1,17 @@
 ﻿using Entity;
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using IdentityServer4.EntityFramework.Options;
+using Microsoft.AspNetCore.ApiAuthorization.IdentityServer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 
 namespace Data
 {
-    public class ReadLaterDataContext : IdentityDbContext
-
+    public class ReadLaterDataContext : ApiAuthorizationDbContext<IdentityUser>
     {
-        public ReadLaterDataContext(DbContextOptions<ReadLaterDataContext> options) : base(options)
+        public ReadLaterDataContext(DbContextOptions options, IOptions<OperationalStoreOptions> operationalStoreOptions) : base(options, operationalStoreOptions)
         {
+            Database.Migrate();
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

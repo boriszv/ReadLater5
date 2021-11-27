@@ -1,5 +1,8 @@
-﻿using Data;
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using Data;
 using Entity;
+using Entity.Search;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,9 +14,12 @@ namespace Services
     public class CategoryService : ICategoryService
     {
         private ReadLaterDataContext _ReadLaterDataContext;
-        public CategoryService(ReadLaterDataContext readLaterDataContext) 
+        private IMapper _mapper;
+
+        public CategoryService(ReadLaterDataContext readLaterDataContext, IMapper mapper)
         {
-            _ReadLaterDataContext = readLaterDataContext;            
+            _ReadLaterDataContext = readLaterDataContext;
+            _mapper = mapper;
         }
 
         public Category CreateCategory(Category category)
@@ -29,9 +35,15 @@ namespace Services
             _ReadLaterDataContext.SaveChanges();
         }
 
-        public List<Category> GetCategories()
+        public List<Category> GetCategories(CategorySearch search)
         {
-            return _ReadLaterDataContext.Categories.ToList();
+            var query = _ReadLaterDataContext.Categories.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search.UserID))
+            {
+                query = query.Where(x => x.UserID == search.UserID);
+            }
+            
+            return query.ToList();
         }
 
         public Category GetCategory(int Id)
@@ -48,6 +60,32 @@ namespace Services
         {
             _ReadLaterDataContext.Categories.Remove(category);
             _ReadLaterDataContext.SaveChanges();
+        }
+
+        public List<TDto> GetCategoryDtos<TDto>(CategorySearch search)
+        {
+            var query = _ReadLaterDataContext.Categories.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(search.UserID))
+            {
+                query = query.Where(x => x.UserID == search.UserID);
+            }
+
+            return query
+                .ProjectTo<TDto>(_mapper.ConfigurationProvider)
+                .ToList();
+        }
+
+        public TDto GetCategoryDto<TDto>(int id)
+        {
+            return _ReadLaterDataContext.Categories
+                .Where(x => x.ID == id)
+                .ProjectTo<TDto>(_mapper.ConfigurationProvider)
+                .FirstOrDefault();
+        }
+
+        public bool CategoryExists(int id)
+        {
+            return _ReadLaterDataContext.Categories.Any(x => x.ID == id);
         }
     }
 }

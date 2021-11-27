@@ -1,23 +1,14 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
 
-namespace Entity
+namespace ReadLaterApi.Dto
 {
-    public class Bookmark
+    public class BookmarkDto
     {
-        [Key]
         public int ID { get; set; }
-
-        [StringLength(maximumLength: 500)]
-        [Url]
         public string URL { get; set; }
-
         public string ShortDescription { get; set; }
-
         public int? CategoryId { get; set; }
-
-        public virtual Category Category { get; set; }
-
+        public string CategoryName { get; set; }
         public DateTime CreateDate { get; set; }
     }
 }
