@@ -133,7 +133,7 @@ namespace ReadLater5.Controllers
             if (ModelState.IsValid)
             {
                 _bookmarkService.UpdateBookmark(bookmark);
-                return RedirectToAction("Index");
+                return RedirectToAction("Details", new { id = bookmark.ID });
             }
             return View(bookmark);
         }
